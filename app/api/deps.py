@@ -19,6 +19,10 @@ from app.services import ConversionService, RateService
 SessionDep = Annotated[Session, Depends(get_session)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 
+# Letters only, either case; the services upper-case it. Digits and
+# symbols are refused here rather than reported as an unknown currency.
+CURRENCY_CODE_PATTERN = r'^[A-Za-z]{3}$'
+
 MIN_HISTORY_POINTS = 1
 MAX_HISTORY_POINTS = 365
 DEFAULT_HISTORY_POINTS = 30

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from http import HTTPStatus
+from urllib.parse import quote as quote_path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -121,6 +122,19 @@ def test_a_malformed_code_is_rejected_before_the_service(
         seeded_client.get('/v1/rates/DOLLAR').status_code
         == HTTPStatus.UNPROCESSABLE_ENTITY
     )
+
+
+@pytest.mark.parametrize('code', ['123', 'U$D', 'U-D'])
+def test_a_code_that_is_not_three_letters_is_rejected(
+    seeded_client: TestClient, code: str
+) -> None:
+    quote = seeded_client.get('/v1/rates/' + quote_path(code))
+    conversion = seeded_client.get(
+        '/v1/convert', params={'from': code, 'to': 'USD'}
+    )
+
+    assert quote.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert conversion.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
 def test_history_returns_every_stored_publication_date(

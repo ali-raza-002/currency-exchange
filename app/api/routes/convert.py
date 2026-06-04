@@ -6,7 +6,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query
 
-from app.api.deps import ConversionServiceDep, InterpreterDep
+from app.api.deps import (
+    CURRENCY_CODE_PATTERN,
+    ConversionServiceDep,
+    InterpreterDep,
+)
 from app.schemas import AskRequest, AskResponse, ConversionOut, ErrorOut
 from app.services.conversion import MAX_AMOUNT
 from app.services.errors import UnparseableQuestionError
@@ -14,11 +18,6 @@ from app.services.errors import UnparseableQuestionError
 router = APIRouter(prefix='/v1/convert', tags=['convert'])
 
 MIN_AMOUNT = 0.0
-
-CurrencyQuery = Annotated[
-    str,
-    Query(min_length=3, max_length=3, examples=['USD']),
-]
 
 ERRORS = {
     404: {'model': ErrorOut, 'description': 'Unknown currency'},
@@ -39,10 +38,12 @@ ERRORS = {
 async def convert(
     conversions: ConversionServiceDep,
     source: Annotated[
-        str, Query(alias='from', min_length=3, max_length=3, examples=['USD'])
+        str,
+        Query(alias='from', pattern=CURRENCY_CODE_PATTERN, examples=['USD']),
     ],
     target: Annotated[
-        str, Query(alias='to', min_length=3, max_length=3, examples=['JPY'])
+        str,
+        Query(alias='to', pattern=CURRENCY_CODE_PATTERN, examples=['JPY']),
     ],
     amount: Annotated[float, Query(gt=MIN_AMOUNT, le=MAX_AMOUNT)] = 1.0,
 ) -> ConversionOut:

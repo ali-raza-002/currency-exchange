@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Path, Query
 
 from app.api.deps import (
+    CURRENCY_CODE_PATTERN,
     DEFAULT_HISTORY_POINTS,
     MAX_HISTORY_POINTS,
     MIN_HISTORY_POINTS,
@@ -21,8 +22,7 @@ router = APIRouter(prefix='/v1/rates', tags=['rates'])
 CurrencyPath = Annotated[
     str,
     Path(
-        min_length=3,
-        max_length=3,
+        pattern=CURRENCY_CODE_PATTERN,
         description='ISO 4217 code, for example USD.',
         examples=['USD'],
     ),

@@ -26,6 +26,12 @@ def test_change_is_the_absolute_move_against_the_previous_day() -> None:
     assert changes['USD'] == pytest.approx(0.01, abs=1e-9)
 
 
+def test_change_carries_no_binary_float_noise() -> None:
+    changes = compute_changes({'USD': 1.05}, previous={'USD': 1.04})
+
+    assert changes['USD'] == 0.01
+
+
 def test_first_ingest_stores_every_quote(session: Session) -> None:
     result = ingest_snapshot(
         session, RateSnapshot(rate_date=YESTERDAY, rates=PREVIOUS_RATES)

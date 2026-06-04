@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy.orm import Session
 
@@ -17,8 +18,8 @@ from app.services.errors import UnknownCurrencyError
 from app.services.rates import RateService, normalise_code
 
 # Enough precision to round-trip a rate without printing float noise.
-RATE_DECIMAL_PLACES = 8
-AMOUNT_DECIMAL_PLACES = 4
+RATE_STEP = Decimal('0.00000001')
+AMOUNT_STEP = Decimal('0.0001')
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,13 +49,19 @@ class ConversionService:
         source_rate = _rate_for(snapshot, source_code)
         target_rate = _rate_for(snapshot, target_code)
 
-        rate = target_rate / source_rate
+        # Binary floats cannot hold 0.825 or 1.01 exactly, so float maths
+        # rounds 1.01 EUR at 0.825 down to 0.8332. The sum is done in
+        # Decimal, from the shortest decimal spelling of each input, and
+        # rounded half-up the way a person checking it by hand would.
+        exact_amount = Decimal(str(amount))
+        rate = Decimal(str(target_rate)) / Decimal(str(source_rate))
+        converted = (exact_amount * rate).quantize(AMOUNT_STEP, ROUND_HALF_UP)
         return Conversion(
             source=source_code,
             target=target_code,
-            amount=amount,
-            converted=round(amount * rate, AMOUNT_DECIMAL_PLACES),
-            rate=round(rate, RATE_DECIMAL_PLACES),
+            amount=float(exact_amount),
+            converted=float(converted),
+            rate=float(rate.quantize(RATE_STEP, ROUND_HALF_UP)),
             rate_date=rate_date,
         )
 

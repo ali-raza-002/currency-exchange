@@ -161,3 +161,26 @@ def test_an_unknown_currency_on_either_side_raises(
 def test_conversion_on_an_empty_database_raises(session: Session) -> None:
     with pytest.raises(NoRatesAvailableError):
         ConversionService(session).convert('USD', 'EUR', 1)
+
+
+@pytest.mark.parametrize(
+    ('amount', 'expected'),
+    [(1.01, 0.8333), (0.33, 0.2723), (2.01, 1.6583), (10.1, 8.3325)],
+)
+def test_converted_amounts_round_half_up_without_float_drift(
+    two_snapshots: Session, amount: float, expected: float
+) -> None:
+    """1.01 * 0.825 is 0.83325 exactly; binary floats made it 0.8332."""
+
+    result = ConversionService(two_snapshots).convert('EUR', 'GBP', amount)
+
+    assert result.converted == expected
+
+
+def test_an_integer_amount_is_echoed_back_unchanged(
+    two_snapshots: Session,
+) -> None:
+    result = ConversionService(two_snapshots).convert('EUR', 'USD', 3)
+
+    assert result.amount == 3.0
+    assert result.converted == 3.15

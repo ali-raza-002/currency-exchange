@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
@@ -33,10 +34,18 @@ class IngestResult:
 def compute_changes(
     rates: dict[str, float], previous: dict[str, float]
 ) -> dict[str, float | None]:
-    """Absolute move per currency, ``None`` where there is no prior quote."""
+    """Absolute move per currency, ``None`` where there is no prior quote.
+
+    Subtracted in Decimal so 1.05 - 1.04 is stored as 0.01, not as
+    0.010000000000000009.
+    """
 
     return {
-        currency: (rate - previous[currency] if currency in previous else None)
+        currency: (
+            float(Decimal(str(rate)) - Decimal(str(previous[currency])))
+            if currency in previous
+            else None
+        )
         for currency, rate in rates.items()
     }
 

@@ -7,7 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app import __version__
-from app.api.deps import RateServiceDep, SessionDep, SettingsDep
+from app.api.deps import RateServiceDep, SessionDep, SettingsDep, TodayDep
 from app.providers.base import BASE_CURRENCY
 from app.schemas import HealthOut, ServiceIndexOut
 
@@ -43,6 +43,7 @@ def healthz(
     session: SessionDep,
     rates: RateServiceDep,
     settings: SettingsDep,
+    today: TodayDep,
 ) -> HealthOut:
     """Reports whether the database answers and how fresh the data is.
 
@@ -63,12 +64,22 @@ def healthz(
 
     latest = rates.latest_rate_date()
     currencies = rates.known_currencies() if latest else []
+    # The scheduler only logs a failed fetch, so a dead upstream would
+    # otherwise go unnoticed while every answer quietly ages.
+    age = (today - latest).days if latest else None
+    if age is None:
+        status = 'empty'
+    elif age > settings.stale_after_days:
+        status = 'stale'
+    else:
+        status = 'ok'
     return HealthOut(
-        status='ok' if latest else 'empty',
+        status=status,
         version=__version__,
         database='reachable',
         rates_provider=settings.rates_provider,
         nlq_interpreter=settings.nlq_provider,
         latest_rate_date=latest,
+        latest_rate_age_days=age,
         stored_currencies=len(currencies),
     )

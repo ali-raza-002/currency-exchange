@@ -12,10 +12,12 @@ from collections.abc import Iterator
 from datetime import date, timedelta
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_today
 from app.config import get_settings
 from app.db import create_schema, get_engine, get_session_factory
 from app.main import create_app
@@ -85,11 +87,19 @@ def two_snapshots(session: Session) -> Session:
     return session
 
 
+def _pinned_app() -> FastAPI:
+    """An app whose idea of "today" is :data:`TODAY`."""
+
+    app = create_app(get_settings())
+    app.dependency_overrides[get_today] = lambda: TODAY
+    return app
+
+
 @pytest.fixture
 def client(session: Session) -> Iterator[TestClient]:
     """A client against an app whose database starts empty."""
 
-    with TestClient(create_app(get_settings())) as test_client:
+    with TestClient(_pinned_app()) as test_client:
         yield test_client
 
 
@@ -97,5 +107,5 @@ def client(session: Session) -> Iterator[TestClient]:
 def seeded_client(two_snapshots: Session) -> Iterator[TestClient]:
     """A client against an app holding both snapshots."""
 
-    with TestClient(create_app(get_settings())) as test_client:
+    with TestClient(_pinned_app()) as test_client:
         yield test_client

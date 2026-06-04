@@ -7,6 +7,7 @@ import pytest
 from app.config import (
     DEFAULT_ANTHROPIC_MODEL,
     DEFAULT_DATABASE_URL,
+    DEFAULT_STALE_AFTER_DAYS,
     Settings,
     load_settings,
 )
@@ -24,6 +25,7 @@ def clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
         'INGEST_MINUTE',
         'DEFAULT_PAGE_SIZE',
         'MAX_PAGE_SIZE',
+        'STALE_AFTER_DAYS',
         'NLQ_PROVIDER',
         'ANTHROPIC_API_KEY',
         'ANTHROPIC_MODEL',
@@ -40,6 +42,7 @@ def test_defaults_need_no_environment(clean_env: None) -> None:
     assert settings.anthropic_model == DEFAULT_ANTHROPIC_MODEL
     assert settings.anthropic_api_key is None
     assert settings.scheduler_enabled is True
+    assert settings.stale_after_days == DEFAULT_STALE_AFTER_DAYS
 
 
 def test_values_are_read_from_the_environment(

@@ -20,6 +20,9 @@ DEFAULT_INGEST_MINUTE = 2
 DEFAULT_PAGE_SIZE = 50
 MAX_PAGE_SIZE = 200
 DEFAULT_ANTHROPIC_MODEL = 'claude-opus-5'
+# The longest ordinary gap between ECB publications, as seen by a nightly
+# job: Easter leaves Thursday's rates as the newest until Wednesday's run.
+DEFAULT_STALE_AFTER_DAYS = 5
 
 _TRUTHY = frozenset({'1', 'true', 'yes', 'on'})
 
@@ -69,6 +72,7 @@ class Settings:
     ingest_minute: int = DEFAULT_INGEST_MINUTE
     default_page_size: int = DEFAULT_PAGE_SIZE
     max_page_size: int = MAX_PAGE_SIZE
+    stale_after_days: int = DEFAULT_STALE_AFTER_DAYS
     nlq_provider: str = 'rules'
     anthropic_api_key: str | None = None
     anthropic_model: str = DEFAULT_ANTHROPIC_MODEL
@@ -93,6 +97,9 @@ def load_settings() -> Settings:
         ingest_minute=_env_int('INGEST_MINUTE', DEFAULT_INGEST_MINUTE),
         default_page_size=_env_int('DEFAULT_PAGE_SIZE', DEFAULT_PAGE_SIZE),
         max_page_size=_env_int('MAX_PAGE_SIZE', MAX_PAGE_SIZE),
+        stale_after_days=_env_int(
+            'STALE_AFTER_DAYS', DEFAULT_STALE_AFTER_DAYS
+        ),
         nlq_provider=_env_str('NLQ_PROVIDER', 'rules').lower(),
         anthropic_api_key=os.environ.get('ANTHROPIC_API_KEY') or None,
         anthropic_model=_env_str('ANTHROPIC_MODEL', DEFAULT_ANTHROPIC_MODEL),

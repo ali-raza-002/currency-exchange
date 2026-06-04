@@ -52,12 +52,19 @@ class HistoryOut(BaseModel):
 
 
 class HealthOut(BaseModel):
-    status: str = Field(examples=['ok'])
+    status: str = Field(
+        examples=['ok'],
+        description=(
+            '"ok", "empty" before the first ingest, "stale" when the newest '
+            'snapshot is older than STALE_AFTER_DAYS, or "degraded".'
+        ),
+    )
     version: str
     database: str = Field(description='"reachable" or the reason it is not.')
     rates_provider: str
     nlq_interpreter: str
     latest_rate_date: date | None = None
+    latest_rate_age_days: int | None = None
     stored_currencies: int = 0
 
 

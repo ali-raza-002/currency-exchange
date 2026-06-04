@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+from datetime import timedelta
 from http import HTTPStatus
 from urllib.parse import quote as quote_path
 
@@ -10,6 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import __version__
+from app.api.deps import get_today
 from app.api.routes import convert, health, rates
 from tests.conftest import TODAY
 
@@ -42,6 +44,24 @@ def test_health_reports_freshness_once_seeded(
     assert body['latest_rate_date'] == TODAY_ISO
     assert body['rates_provider'] == 'static'
     assert body['nlq_interpreter'] == 'rules'
+
+
+@pytest.mark.parametrize(
+    ('days_later', 'status'), [(0, 'ok'), (5, 'ok'), (6, 'stale')]
+)
+def test_health_flags_a_snapshot_older_than_the_threshold(
+    seeded_client: TestClient, days_later: int, status: str
+) -> None:
+    app = seeded_client.app
+    app.dependency_overrides[get_today] = lambda: (
+        TODAY + timedelta(days=days_later)
+    )
+
+    body = seeded_client.get('/healthz').json()
+
+    assert body['status'] == status
+    assert body['latest_rate_age_days'] == days_later
+    assert body['latest_rate_date'] == TODAY_ISO
 
 
 def test_health_never_fails_the_probe(client: TestClient) -> None:

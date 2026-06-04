@@ -6,6 +6,7 @@ storage layer would not touch a route signature.
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Annotated
 
 from fastapi import Depends, Query
@@ -26,6 +27,15 @@ CURRENCY_CODE_PATTERN = r'^[A-Za-z]{3}$'
 MIN_HISTORY_POINTS = 1
 MAX_HISTORY_POINTS = 365
 DEFAULT_HISTORY_POINTS = 30
+
+
+def get_today() -> date:
+    """The current date, as a dependency so tests can pin it."""
+
+    return date.today()
+
+
+TodayDep = Annotated[date, Depends(get_today)]
 
 
 def get_rate_service(session: SessionDep) -> RateService:

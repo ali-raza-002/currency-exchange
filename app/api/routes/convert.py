@@ -8,6 +8,7 @@ from fastapi import APIRouter, Query
 
 from app.api.deps import ConversionServiceDep, InterpreterDep
 from app.schemas import AskRequest, AskResponse, ConversionOut, ErrorOut
+from app.services.conversion import MAX_AMOUNT
 from app.services.errors import UnparseableQuestionError
 
 router = APIRouter(prefix='/v1/convert', tags=['convert'])
@@ -22,7 +23,10 @@ CurrencyQuery = Annotated[
 ERRORS = {
     404: {'model': ErrorOut, 'description': 'Unknown currency'},
     409: {'model': ErrorOut, 'description': 'Nothing ingested yet'},
-    422: {'model': ErrorOut, 'description': 'Question not understood'},
+    422: {
+        'model': ErrorOut,
+        'description': 'Question not understood, or amount out of range',
+    },
 }
 
 
@@ -40,7 +44,7 @@ async def convert(
     target: Annotated[
         str, Query(alias='to', min_length=3, max_length=3, examples=['JPY'])
     ],
-    amount: Annotated[float, Query(gt=MIN_AMOUNT)] = 1.0,
+    amount: Annotated[float, Query(gt=MIN_AMOUNT, le=MAX_AMOUNT)] = 1.0,
 ) -> ConversionOut:
     """Cross-rate conversion through the euro, at the latest rates."""
 

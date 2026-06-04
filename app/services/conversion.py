@@ -7,6 +7,7 @@ one unit of ``source`` is worth ``rate[target] / rate[source]`` units of
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
@@ -14,12 +15,16 @@ from decimal import ROUND_HALF_UP, Decimal
 from sqlalchemy.orm import Session
 
 from app.providers.base import BASE_CURRENCY
-from app.services.errors import UnknownCurrencyError
+from app.services.errors import InvalidAmountError, UnknownCurrencyError
 from app.services.rates import RateService, normalise_code
 
 # Enough precision to round-trip a rate without printing float noise.
 RATE_STEP = Decimal('0.00000001')
 AMOUNT_STEP = Decimal('0.0001')
+# A trillion is far beyond any real conversion and keeps the result well
+# inside what a float -- and so a JSON number -- represents exactly to
+# four decimal places.
+MAX_AMOUNT = 1_000_000_000_000
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +47,8 @@ class ConversionService:
         self._rates = RateService(session)
 
     def convert(self, source: str, target: str, amount: float) -> Conversion:
+        if not math.isfinite(amount) or not 0 < amount <= MAX_AMOUNT:
+            raise InvalidAmountError(amount, MAX_AMOUNT)
         source_code = normalise_code(source)
         target_code = normalise_code(target)
         rate_date, snapshot = self._rates.latest_snapshot_rates()

@@ -25,6 +25,16 @@ class UnknownCurrencyError(ServiceError):
         super().__init__(f'no rate is published for currency {currency!r}')
 
 
+class InvalidAmountError(ServiceError):
+    """An amount that is zero, negative, not a number or implausibly big."""
+
+    def __init__(self, amount: float, maximum: float) -> None:
+        self.amount = amount
+        super().__init__(
+            f'amount must be greater than 0 and at most {maximum:,.0f}'
+        )
+
+
 class UnparseableQuestionError(ServiceError):
     """A natural-language question could not be turned into a conversion."""
 

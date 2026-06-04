@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from http import HTTPStatus
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app import __version__
@@ -176,6 +177,31 @@ def test_conversion_rejects_a_non_positive_amount(
     response = seeded_client.get('/v1/convert?from=EUR&to=USD&amount=0')
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.parametrize('amount', ['inf', 'nan', '1e13'])
+def test_conversion_rejects_a_non_finite_or_huge_amount(
+    seeded_client: TestClient, amount: str
+) -> None:
+    response = seeded_client.get(
+        f'/v1/convert?from=EUR&to=USD&amount={amount}'
+    )
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.parametrize(
+    'question', ['0 dollars in yen', 'convert 5000bn dollars to yen']
+)
+def test_asking_with_an_unusable_amount_is_a_422_not_a_500(
+    seeded_client: TestClient, question: str
+) -> None:
+    response = seeded_client.post(
+        '/v1/convert/ask', json={'question': question}
+    )
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert 'amount must be greater than 0' in response.json()['detail']
 
 
 def test_conversion_with_an_unknown_currency_is_a_404(

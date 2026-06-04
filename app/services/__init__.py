@@ -2,6 +2,7 @@
 
 from app.services.conversion import Conversion, ConversionService
 from app.services.errors import (
+    InvalidAmountError,
     NoRatesAvailableError,
     ServiceError,
     UnknownCurrencyError,
@@ -19,6 +20,7 @@ __all__ = [
     'Conversion',
     'ConversionService',
     'IngestResult',
+    'InvalidAmountError',
     'NoRatesAvailableError',
     'RatePage',
     'RateService',

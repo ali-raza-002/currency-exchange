@@ -20,6 +20,7 @@ from app.config import Settings, get_settings
 from app.db import create_schema
 from app.scheduler import build_scheduler
 from app.services.errors import (
+    InvalidAmountError,
     NoRatesAvailableError,
     ServiceError,
     UnknownCurrencyError,
@@ -38,6 +39,7 @@ STATUS_FOR_ERROR: dict[type[ServiceError], int] = {
     UnknownCurrencyError: 404,
     NoRatesAvailableError: 409,
     UnparseableQuestionError: 422,
+    InvalidAmountError: 422,
 }
 FALLBACK_STATUS = 400
 

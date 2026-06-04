@@ -20,10 +20,6 @@ class ConversionIntent:
     amount: float
     interpreter: str
 
-    def __post_init__(self) -> None:
-        if self.amount <= 0:
-            raise ValueError('amount must be positive')
-
 
 @runtime_checkable
 class QueryInterpreter(Protocol):

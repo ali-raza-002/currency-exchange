@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.providers.base import RateSnapshot
 from app.services import (
     ConversionService,
+    InvalidAmountError,
     NoRatesAvailableError,
     RateService,
     UnknownCurrencyError,
@@ -184,3 +185,13 @@ def test_an_integer_amount_is_echoed_back_unchanged(
 
     assert result.amount == 3.0
     assert result.converted == 3.15
+
+
+@pytest.mark.parametrize(
+    'amount', [0, -5, float('inf'), float('nan'), 1_000_000_000_001]
+)
+def test_an_out_of_range_amount_is_a_domain_error(
+    two_snapshots: Session, amount: float
+) -> None:
+    with pytest.raises(InvalidAmountError, match='greater than 0'):
+        ConversionService(two_snapshots).convert('EUR', 'USD', amount)

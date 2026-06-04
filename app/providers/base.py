@@ -7,11 +7,15 @@ one registry entry -- no service or route changes.
 
 from __future__ import annotations
 
+import math
+import re
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Protocol, runtime_checkable
 
 BASE_CURRENCY = 'EUR'
+
+CURRENCY_CODE = re.compile(r'[A-Z]{3}')
 
 
 class RateProviderError(RuntimeError):
@@ -37,6 +41,15 @@ class RateSnapshot:
             raise ValueError(
                 f'the base currency {self.base} must not appear in rates'
             )
+        for code, rate in self.rates.items():
+            if not CURRENCY_CODE.fullmatch(code):
+                raise ValueError(f'{code!r} is not an ISO 4217 code')
+            # A zero or non-finite rate would later become a division by
+            # zero, or an inf/nan that JSON cannot carry.
+            if not math.isfinite(rate) or rate <= 0:
+                raise ValueError(
+                    f'rate for {code} must be positive and finite'
+                )
 
     @property
     def currencies(self) -> list[str]:

@@ -85,6 +85,46 @@ def test_a_non_numeric_rate_raises() -> None:
         parse_ecb_document(payload)
 
 
+@pytest.mark.parametrize('rate', ['0', '-1.2', 'inf', 'nan'])
+def test_a_zero_negative_or_non_finite_rate_is_rejected(rate: str) -> None:
+    payload = (
+        b'<Envelope><Cube><Cube time="2026-03-13">'
+        b'<Cube currency="USD" rate="' + rate.encode() + b'"/>'
+        b'</Cube></Cube></Envelope>'
+    )
+
+    with pytest.raises(RateProviderError, match='positive and finite'):
+        parse_ecb_document(payload)
+
+
+@pytest.mark.parametrize('code', ['US', 'USDT', 'U$D', '123'])
+def test_a_quote_with_a_malformed_currency_code_is_rejected(code: str) -> None:
+    payload = (
+        b'<Envelope><Cube><Cube time="2026-03-13">'
+        b'<Cube currency="' + code.encode() + b'" rate="1.1"/>'
+        b'</Cube></Cube></Envelope>'
+    )
+
+    with pytest.raises(RateProviderError, match='not an ISO 4217 code'):
+        parse_ecb_document(payload)
+
+
+def test_a_document_quoting_the_euro_itself_is_a_provider_error() -> None:
+    payload = (
+        b'<Envelope><Cube><Cube time="2026-03-13">'
+        b'<Cube currency="EUR" rate="1"/>'
+        b'</Cube></Cube></Envelope>'
+    )
+
+    with pytest.raises(RateProviderError, match='must not appear'):
+        parse_ecb_document(payload)
+
+
+def test_a_snapshot_rejects_a_zero_rate_directly() -> None:
+    with pytest.raises(ValueError, match='positive and finite'):
+        RateSnapshot(rate_date=date(2026, 3, 13), rates={'USD': 0.0})
+
+
 def test_a_snapshot_must_not_be_empty() -> None:
     with pytest.raises(ValueError, match='at least one rate'):
         RateSnapshot(rate_date=date(2026, 3, 13), rates={})

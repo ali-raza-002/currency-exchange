@@ -71,7 +71,7 @@ def parse_ecb_document(payload: bytes) -> RateSnapshot:
 
     rates: dict[str, float] = {}
     for quote in dated.findall(_QUOTE_CUBE):
-        code = quote.attrib['currency'].upper()
+        code = quote.attrib['currency'].strip().upper()
         try:
             rates[code] = float(quote.attrib['rate'])
         except (KeyError, ValueError) as exc:
@@ -82,4 +82,7 @@ def parse_ecb_document(payload: bytes) -> RateSnapshot:
     if not rates:
         raise RateProviderError('ECB document contains no quotes')
 
-    return RateSnapshot(rate_date=rate_date, rates=rates)
+    try:
+        return RateSnapshot(rate_date=rate_date, rates=rates)
+    except ValueError as exc:
+        raise RateProviderError(f'ECB document rejected: {exc}') from exc

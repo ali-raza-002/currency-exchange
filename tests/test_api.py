@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from http import HTTPStatus
 from urllib.parse import quote as quote_path
 
@@ -9,6 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import __version__
+from app.api.routes import convert, health, rates
 from tests.conftest import TODAY
 
 TODAY_ISO = TODAY.isoformat()
@@ -267,3 +269,21 @@ def test_the_openapi_document_is_generated(client: TestClient) -> None:
 
     assert schema['info']['version'] == __version__
     assert '/v1/convert/ask' in schema['paths']
+
+
+def test_handlers_that_block_run_in_the_threadpool() -> None:
+    """SQLAlchemy and the Anthropic client are synchronous.
+
+    Called from an ``async def`` handler they would stall the event loop
+    for every other request, so only handlers free of I/O may be async.
+    """
+
+    blocking = {
+        route.path: inspect.iscoroutinefunction(route.endpoint)
+        for router in (convert.router, health.router, rates.router)
+        for route in router.routes
+        if route.path != '/'
+    }
+
+    assert blocking
+    assert not any(blocking.values()), blocking

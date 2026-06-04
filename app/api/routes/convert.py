@@ -35,7 +35,7 @@ ERRORS = {
     responses=ERRORS,
     summary='Convert between two currencies',
 )
-async def convert(
+def convert(
     conversions: ConversionServiceDep,
     source: Annotated[
         str,
@@ -60,7 +60,7 @@ async def convert(
     responses=ERRORS,
     summary='Convert from a question in words',
 )
-async def ask(
+def ask(
     payload: AskRequest,
     conversions: ConversionServiceDep,
     interpreter: InterpreterDep,

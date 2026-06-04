@@ -38,7 +38,7 @@ NO_DATA = {409: {'model': ErrorOut, 'description': 'Nothing ingested yet'}}
     responses=NO_DATA,
     summary='Latest published snapshot',
 )
-async def list_rates(
+def list_rates(
     rates: RateServiceDep,
     page: PaginationDep,
     currency: Annotated[
@@ -68,7 +68,7 @@ async def list_rates(
     responses=NOT_FOUND | NO_DATA,
     summary='Latest quote for one currency',
 )
-async def get_rate(currency: CurrencyPath, rates: RateServiceDep) -> QuoteOut:
+def get_rate(currency: CurrencyPath, rates: RateServiceDep) -> QuoteOut:
     return QuoteOut.model_validate(rates.get_latest_quote(currency))
 
 
@@ -78,7 +78,7 @@ async def get_rate(currency: CurrencyPath, rates: RateServiceDep) -> QuoteOut:
     responses=NOT_FOUND,
     summary='Recent quotes for one currency',
 )
-async def get_history(
+def get_history(
     currency: CurrencyPath,
     rates: RateServiceDep,
     points: Annotated[

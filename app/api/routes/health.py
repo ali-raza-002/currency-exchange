@@ -39,7 +39,7 @@ async def index() -> ServiceIndexOut:
     response_model=HealthOut,
     summary='Liveness and data freshness',
 )
-async def healthz(
+def healthz(
     session: SessionDep,
     rates: RateServiceDep,
     settings: SettingsDep,

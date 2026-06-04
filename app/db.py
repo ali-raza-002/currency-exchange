@@ -60,7 +60,7 @@ def create_schema() -> None:
     Base.metadata.create_all(bind=get_engine())
 
 
-def get_session() -> Generator[Session, None, None]:
+def get_session() -> Generator[Session]:
     """FastAPI dependency yielding a request-scoped session."""
 
     session = get_session_factory()()
